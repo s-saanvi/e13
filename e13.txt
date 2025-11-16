@@ -1,0 +1,331 @@
+-----EXP 1 ----------
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+#file_path=input("Enter the Data Set : ")
+file_path="/home/gaurav/Downloads/Chrome Downloads/house_prices_india (1).csv"
+try:
+    df=pd.read_csv(file_path)
+    print("\n~~ Dataset loaded successfully~~")
+    print(df.head())
+    if df.shape[1]>1:
+        print("\n available colums",list(df.columns))
+        column_name=input("enter the column name containing house prices:")
+    else:
+        column_name=df.columns[0]
+    house_prices=df[column_name].dropna().values
+    house_prices=house_prices[house_prices>0]
+    print(f"\n total no of valid house prices {len(house_prices)}")
+    q1=np.percentile(house_prices,25)
+    q3=np.percentile(house_prices,75)
+    print(f"\nThe 25th percentile(Q1) of hosue price is:${q1:,.2f}")
+    print(f"The 75th percentile (Q3) of house price is:${q3:,.2f}\n")
+    iqr=q3-q1
+    print(f"the interquartile (IQR) of house price is ${iqr:,.2f}\n")
+except FileNotFoundError:
+    print("File not found.please check the file path")
+except pd.errors.EmptyDataError:
+    print("File is empty or corrupted")
+except Exception as e:
+    print(f"An error occured :{e}")
+plt.figure(figsize=(10,6))
+sns.boxplot(y=house_prices,color='skyblue')
+plt.hlines(q1,xmin=-0.4,xmax=0.4,colors='red',linestyles='dashed',label=f'Q1(${q1:,.0f})')
+plt.hlines(q3,xmin=-0.4,xmax=0.4,colors='green',linestyles='dashed',label=f'Q3(${q3:,.0f})')
+plt.text(-0.45,q1,'Q1',va='center',ha='right',color='red',fontsize=12)
+plt.text(-0.45,q3,'Q3',va='center',ha='right',color='green',fontsize=12)
+plt.title("box plot of house price with q1 and q3")
+plt.ylabel("House price ($)")
+plt.grid(axis='y',linestyle="--",alpha=0.7)
+plt.legend()
+plt.show()
+plt.figure(figsize=(12,7))
+sns.histplot(house_prices,kde=True,color='purple',bins=30)
+plt.axvline(q1,color='red',linestyle='dashed',linewidth=2,label=f'Q1:${q1:.0f}')
+plt.axvline(q3,color='green',linestyle='dashed',linewidth=2,label=f'Q3:${q3:.0f}')
+plt.title("histogram of house price with q1 and q3")
+plt.xlabel("House price ($)")
+plt.ylabel('frequency')
+plt.legend()
+plt.grid(axis='y',linestyle="--",alpha=0.7)
+plt.show()
+----------------------------------------
+-----EXP 2-----------------------------
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# df = pd.read_csv('customer_data.csv')
+np.random.seed(42) 
+
+satisfaction_levels = ['Low', 'Medium', 'High']
+repeat_purchases = ['No', 'Yes']
+
+data = {
+ 'Satisfaction Level': np.random.choice(satisfaction_levels, size=500, p=[0.2, 0.5, 0.3]),
+ 'Repeat Purchase': np.random.choice(repeat_purchases, size=500, p=[0.6, 0.4]) # Initial general distribution
+}
+df = pd.DataFrame(data)
+
+df.loc[df['Satisfaction Level'] == 'High', 'Repeat Purchase'] = np.random.choice(['Yes', 'No'],
+size=len(df[df['Satisfaction Level'] == 'High']), p=[0.8, 0.2])
+df.loc[df['Satisfaction Level'] == 'Low', 'Repeat Purchase'] = np.random.choice(['No', 'Yes'],
+size=len(df[df['Satisfaction Level'] == 'Low']), p=[0.7, 0.3])
+print("--- Customer Data Snippet ---")
+print(df.head())
+print(f"\nTotal number of customers: {len(df)}\n")
+
+sns.set_style("whitegrid")
+
+plt.figure(figsize=(8, 5))
+sns.countplot(data=df, x='Satisfaction Level', order=satisfaction_levels, palette='viridis')
+plt.title('Distribution of Customer Satisfaction Levels')
+plt.xlabel('Satisfaction Level')
+plt.ylabel('Number of Customers')
+plt.show()
+
+plt.figure(figsize=(6, 4))
+sns.countplot(data=df, x='Repeat Purchase', palette='pastel')
+plt.title('Distribution of Repeat Purchases')
+plt.xlabel('Repeat Purchase')
+plt.ylabel('Number of Customers')
+plt.show()
+
+satisfaction_purchase_counts = df.groupby(['Satisfaction Level', 'Repeat Purchase']).size().unstack(fill_value=0)
+
+satisfaction_purchase_proportions = satisfaction_purchase_counts.apply(lambda x: x / x.sum(),
+axis=1)
+fig, ax = plt.subplots(figsize=(10, 6))
+satisfaction_purchase_proportions.loc[satisfaction_levels, ['No', 'Yes']].plot(kind='bar', stacked=True,
+ax=ax, cmap='coolwarm')
+plt.title('Repeat Purchase Proportion by Customer Satisfaction Level (Stacked Bar Chart)')
+plt.xlabel('Satisfaction Level')
+plt.ylabel('Proportion of Customers')
+plt.xticks(rotation=0)
+plt.legend(title='Repeat Purchase')
+plt.tight_layout()
+plt.show()
+
+plt.figure(figsize=(10, 6))
+sns.countplot(data=df, x='Satisfaction Level', hue='Repeat Purchase', order=satisfaction_levels,
+palette='deep')
+plt.title('Repeat Purchase by Customer Satisfaction Level (Grouped Bar Chart)')
+plt.xlabel('Satisfaction Level')
+plt.ylabel('Number of Customers')
+plt.legend(title='Repeat Purchase')
+plt.show()
+
+print("--- Inferences from the Data ---")
+print("To infer from the data, we examine the created visualizations, particularly the stacked and grouped bar charts.")
+
+cross_tab = pd.crosstab(df['Satisfaction Level'], df['Repeat Purchase'], margins=True)
+print("\nCross-Tabulation of Satisfaction Level vs. Repeat Purchase:")
+print(cross_tab)
+cross_tab_prop = pd.crosstab(df['Satisfaction Level'], df['Repeat Purchase'], normalize='index') * 100
+print("\nProportion of Repeat Purchase by Satisfaction Level (in %):")
+print(cross_tab_prop.round(2))
+--------------------------------------
+----------- EXP 3--------------------
+import pandas as pd, seaborn as sns, matplotlib.pyplot as plt
+df = pd.read_csv("/home/gaurav/Downloads/Chrome Downloads/car_dataset.csv")
+print(df.head(), "\n--Generating pair plot--")
+sns.pairplot(df, diag_kind="hist")
+plt.suptitle("Pair Plot of Car Dataset", y=1.02)
+plt.show()
+corr = df.corr(numeric_only=True)
+sns.heatmap(corr, annot=True, cmap="coolwarm", fmt=".2f")
+plt.title("Correlation Matrix")
+plt.show()
+print("\nCorrelation Matrix:\n", corr)
+
+----------------------------------------------------
+------------ EXP 4 -------------------------------
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+pop = np.random.lognormal(mean=10, sigma=0.5, size=50000)
+
+sample_means = [np.mean(np.random.choice(pop, 50, replace=False)) for _ in range(10)]
+
+plt.figure(figsize=(12,5))
+
+plt.subplot(1,2,1)
+plt.hist(pop, bins=50, edgecolor='black')
+plt.subplot(1,2,2)
+plt.hist(sample_means, bins=5, edgecolor='black')
+plt.show()
+
+print("Population Mean:", np.mean(pop))
+print("Sample Means:", sample_means)
+print("Mean of Sample Means:", np.mean(sample_means))
+-----------------------------------------------------------
+--------------------- EXP 5 ------------------------------
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+n = 20
+sample_mean = 8.0
+sample_sd = 2.0
+mu0 = 0.0
+alpha = 0.05
+
+df = n - 1
+se = sample_sd / np.sqrt(n)
+t_stat = (sample_mean - mu0) / se
+p_value = 2 * stats.t.sf(abs(t_stat), df) 
+t_crit = stats.t.ppf(1 - alpha/2, df)
+ci_lower = sample_mean - t_crit * se
+ci_upper = sample_mean + t_crit * se
+print(f"n = {n}")
+print(f"sample mean = {sample_mean:.4f} bpm")
+print(f"sample sd = {sample_sd:.4f} bpm")
+print(f"standard error = {se:.4f} bpm")
+print(f"degrees of freedom = {df}")
+print(f"t-statistic = {t_stat:.4f}")
+print(f"two-tailed p-value = {p_value:.4e}")
+print(f"critical t (two-tailed, alpha={alpha}) = ±{t_crit:.4f}")
+print(f"95% CI for mean increase = ({ci_lower:.4f}, {ci_upper:.4f}) bpm")
+if p_value < alpha:
+ print("Decision: Reject H0 (there is evidence the drug changes heart rate).")
+else:
+ print("Decision: Fail to reject H0 (no evidence the drug changes heart rate).")
+
+x = np.linspace(-5, t + 6, 800)
+y = stats.t.pdf(x, df)
+plt.plot(x, y)
+plt.fill_between(x, 0, y, where=(x <= -tcrit) | (x >= tcrit), alpha=0.3)
+plt.axvline(t, ls='--')
+plt.title("t-distribution with critical region")
+plt.show()
+
+-----------------------------------------------------------
+---------------------- EXP 6-------------------------------
+import numpy as np
+from statsmodels.stats.proportion import proportions_ztest
+
+z, p = proportions_ztest([120,150], [1000,1200])
+print(f"Z = {z:.3f}\nP = {p:.5f}")
+print("Reject H₀ There is a significant difference in conversion rates between A and B." if p < 0.05 else "Fail to reject H₀  No significant difference in conversion rates between A and B.")
+-------------------------------------------------------------
+---------------- EXP 7 -------------------------------------
+from scipy import stats
+import math
+
+mean_A, std_A, n_A = 1000, 100, 30
+mean_B, std_B, n_B = 950, 120, 30
+alpha = 0.05
+
+t = (mean_A - mean_B) / math.sqrt(std_A**2/n_A + std_B**2/n_B)
+
+df = (std_A**2/n_A + std_B**2/n_B)**2 / (
+    (std_A**4 / (n_A**2 * (n_A-1))) +
+    (std_B**4 / (n_B**2 * (n_B-1)))
+)
+
+p = 2 * (1 - stats.t.cdf(abs(t), df))
+
+print(f"T = {t:.3f}\nDF = {df:.2f}\nP = {p:.5f}")
+print("Reject H₀" if p < alpha else "Fail to reject H₀")
+----------------------------------------------------------------
+----------- EXP 8 ----------------------------------------------
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import OrdinalEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+
+df = pd.read_csv('/home/ailab/GA/exp8/synthetic_salary_data.csv')
+
+levels = [['High School', 'Bachelor', 'Master', 'PhD']]  
+df['Edu'] = OrdinalEncoder(categories=levels).fit_transform(df[['Education']])
+
+X = df[['Edu', 'Experience']]
+y = df['Salary']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+model = LinearRegression().fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+print("coef:", model.coef_, "intercept:", model.intercept_)
+print("MSE:", mean_squared_error(y_test, y_pred), "R2:", r2_score(y_test, y_pred))
+print("Predicted (Education=6,Experience=3):", model.predict([[6, 3]])[0])
+
+plt.figure(figsize=(10,6))
+sns.scatterplot(data=df, x='Experience', y='Salary', hue='Education', s=70, palette='viridis')
+plt.title("Salary vs Experience by Education"); plt.tight_layout(); plt.show()
+---------------------------------------------------------------------------
+----------------------- EXP 9 --------------------------------------------
+
+import pandas as pd, numpy as np, statsmodels.api as sm, matplotlib.pyplot as plt
+
+df = pd.DataFrame({
+    'Price':[200000,250000,300000,320000,350000,400000,420000,450000,500000,550000],
+    'SqFt':[1500,1600,1800,1900,2000,2100,2200,2400,2600,2800]
+})
+df['k'] = np.maximum(0, df.SqFt - 2000)
+X = sm.add_constant(df[['SqFt','k']])
+model = sm.OLS(df.Price, X).fit()
+print(model.summary())
+plt.scatter(df.SqFt, df.Price)
+plt.plot(df.SqFt, model.predict(X), 'r')
+plt.show()
+------------------------------------------------------------------------------
+---------------- EXP 10 -----------------------------------------------------
+import numpy as np
+intercept = 2.5
+coef_age = -0.03
+coef_condition = 0.5
+age = 60
+def expected_visits(cond):
+    return np.exp(intercept + coef_age*age + coef_condition*cond)
+
+print(f"Expected visits (with condition): {expected_visits(1):.2f}")
+print(f"Expected visits (without condition): {expected_visits(0):.2f}")
+----------------------------------------------------------------------------
+-------------- EXP 11 -----------------------------------------------------
+from scipy import stats
+import math
+
+old_mean = 200
+sample_mean = 190
+std = 15
+n = 40
+alpha = 0.05
+
+t_stat = (sample_mean - old_mean) / (std / math.sqrt(n))
+p_value = stats.t.cdf(t_stat, df=n-1)
+
+print(f"T = {t_stat:.3f}\nP = {p_value:.5f}")
+print("Reject H₀" if p_value < alpha else "Fail to reject H₀")
+--------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
